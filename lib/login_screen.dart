@@ -1,39 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
- Future<void> login(BuildContext context) async {
-  final String apiUrl = "https://myproject/login.php";
-  try {
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'email': emailController.text,
-        'password': passwordController.text,
-      }),
-    ).timeout(Duration(seconds: 30)); // زيادة مهلة الاتصال إلى 30 ثانية
+  Future<void> login(BuildContext context) async {
+    final String apiUrl = "http://192.168.1.7/myproject/login.php"; // استخدم عنوان IP المحلي الخاص بك هنا
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': emailController.text,
+          'password': passwordController.text,
+        }),
+      ).timeout(Duration(seconds: 30)); // زيادة مهلة الاتصال إلى 30 ثانية
 
-    if (response.statusCode == 200) {
-      final responseBody = jsonDecode(response.body);
-      if (responseBody['success']) {
-        Navigator.pushNamed(context, '/home');
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        if (responseBody['success']) {
+          String username = responseBody['user']['username'] ?? 'UnknownUser';
+          String name = responseBody['user']['name'] ?? 'UnknownName';
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(
+                username: username,
+                name: name,
+              ),
+            ),
+          );
+        } else {
+          showErrorDialog(context, responseBody['message']);
+        }
       } else {
-        showErrorDialog(context, responseBody['message']);
+        showErrorDialog(context, "Server error: ${response.statusCode}");
       }
-    } else {
-      showErrorDialog(context, "Server error: ${response.statusCode}");
+    } catch (e) {
+      showErrorDialog(context, "An error occurred: $e");
     }
-  } catch (e) {
-    showErrorDialog(context, "An error occurred: $e");
   }
-}
 
   void showErrorDialog(BuildContext context, String message) {
     showDialog(

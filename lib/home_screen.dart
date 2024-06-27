@@ -1,12 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'add_lab.dart';
 import 'add_device_screen.dart';
-import 'edit_device_screen.dart';
-import 'lab_detail_screen.dart';
-import 'assign_device_screen.dart';
+import 'dart:convert';
+import 'LabDetailScreen.dart'; // تأكد من أن المسار صحيح
 
-class HomeScreen extends StatelessWidget {
-  final String username = 'Samah';
-  final String name = 'Ltaief';
+
+class HomeScreen extends StatefulWidget {
+  final String username;
+  final String name;
+
+  HomeScreen({required this.username, required this.name});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<dynamic> labs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchLabs();
+  }
+
+  Future<void> fetchLabs() async {
+    final String apiUrl = "http://127.0.0.1/myproject/get_labs.php";
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = jsonDecode(response.body);
+        setState(() {
+          labs = responseData;
+        });
+      } else {
+        showErrorDialog("Server error: ${response.statusCode}\nResponse: ${response.body}");
+      }
+    } catch (e) {
+      showErrorDialog("An error occurred: $e");
+    }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,12 +69,9 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Text(
-              'LabTechCare',
-              style: TextStyle(color: Colors.white),
-            ),
+            Text('LabTechCare', style: TextStyle(color: Colors.white)),
             Spacer(),
-            Text('$name ($username)', style: TextStyle(fontSize: 16, color: Colors.white)),
+            Text('${widget.name} (${widget.username})', style: TextStyle(fontSize: 16, color: Colors.white)),
             SizedBox(width: 10),
             CircleAvatar(
               backgroundColor: Colors.white,
@@ -32,7 +84,7 @@ class HomeScreen extends StatelessWidget {
       body: Row(
         children: <Widget>[
           Container(
-            width: 240, // Width of the sidebar
+            width: 240,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color.fromARGB(255, 36, 117, 154), Color.fromRGBO(43, 64, 99, 1)],
@@ -44,9 +96,7 @@ class HomeScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: <Widget>[
                 DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                  ),
+                  decoration: BoxDecoration(color: Colors.transparent),
                   child: Column(
                     children: [
                       CircleAvatar(
@@ -55,41 +105,27 @@ class HomeScreen extends StatelessWidget {
                         child: Icon(Icons.person, size: 50, color: Colors.blue),
                       ),
                       SizedBox(height: 10),
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        username,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
+                      Text(widget.name, style: TextStyle(color: Colors.white, fontSize: 18)),
+                      Text(widget.username, style: TextStyle(color: Colors.white70, fontSize: 14)),
                     ],
                   ),
                 ),
                 ListTile(
                   leading: Icon(Icons.add, color: Colors.white),
-                  title: Text('Add Device', style: TextStyle(color: Colors.white)),
-                  onTap: () {
-                    Navigator.push(
+                  title: Text('Add Lab', style: TextStyle(color: Colors.white)),
+                  onTap: () async {
+                    await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AddDeviceScreen()),
+                      MaterialPageRoute(builder: (context) => AddLabScreen()),
                     );
+                    fetchLabs(); // إعادة تحميل المعامل عند العودة من شاشة إضافة معمل
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.edit, color: Colors.white),
                   title: Text('Modify Device', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => EditDeviceScreen(deviceName: 'Device 1')),
-                    );
+                    // Add your navigation logic here
                   },
                 ),
                 ListTile(
@@ -103,10 +139,7 @@ class HomeScreen extends StatelessWidget {
                   leading: Icon(Icons.assignment, color: Colors.white),
                   title: Text('Assign Device', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AssignDeviceScreen()),
-                    );
+                    // Add your navigation logic here
                   },
                 ),
                 ListTile(
@@ -127,14 +160,14 @@ class HomeScreen extends StatelessWidget {
                   leading: Icon(Icons.report, color: Colors.white),
                   title: Text('Reports', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pushNamed(context, '/reports'); // تأكد من إضافة هذا السطر
+                    // Add your navigation logic هنا
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.note, color: Colors.white),
                   title: Text('Notes', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    // Add your navigation logic هنا
+                    // Add your navigation logic here
                   },
                 ),
               ],
@@ -146,86 +179,31 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    'Laboratories',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text('Laboratories', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   SizedBox(height: 20),
-                  Expanded(
-                    child: DataTable(
-                      columns: [
-                        DataColumn(label: Text('Lab No')),
-                        DataColumn(label: Text('Total Devices')),
-                        DataColumn(label: Text('Working Devices')),
-                        DataColumn(label: Text('Non-working Devices')),
-                      ],
-                      rows: [
-                        DataRow(cells: [
-                          DataCell(Text('Lab 1'), onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LabDetailScreen(labName: 'Lab 1')),
-                            );
-                          }),
-                          DataCell(Text('30')),
-                          DataCell(Text('27')),
-                          DataCell(Text('3')),
-                        ]),
-                        DataRow(cells: [
-                          DataCell(Text('Lab 2'), onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LabDetailScreen(labName: 'Lab 2')),
-                            );
-                          }),
-                          DataCell(Text('30')),
-                          DataCell(Text('30')),
-                          DataCell(Text('0')),
-                        ]),
-                        DataRow(cells: [
-                          DataCell(Text('Lab 3'), onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LabDetailScreen(labName: 'Lab 3')),
-                            );
-                          }),
-                          DataCell(Text('30')),
-                          DataCell(Text('30')),
-                          DataCell(Text('0')),
-                        ]),
-                        DataRow(cells: [
-                          DataCell(Text('Lab 4'), onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LabDetailScreen(labName: 'Lab 4')),
-                            );
-                          }),
-                          DataCell(Text('25')),
-                          DataCell(Text('20')),
-                          DataCell(Text('5')),
-                        ]),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 230, 240, 250),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'LabTechCare is an application designed to help manage laboratory devices. You can add, modify, transfer, and assign devices to technicians. The application also provides reports and notes functionalities for better management.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color.fromARGB(255, 36, 117, 154),
-                      ),
-                    ),
-                  ),
+                  labs.isEmpty
+                      ? Center(child: Text('No labs available.'))
+                      : Expanded(
+                          child: ListView.builder(
+                            itemCount: labs.length,
+                            itemBuilder: (context, index) {
+                              final lab = labs[index];
+                              final publicAccessText = int.tryParse(lab['publicAccess'].toString()) == 1 ? 'Available for public use' : 'Not available for public use';
+                              return ListTile(
+                                title: Text(lab['name'] ?? 'Unknown Lab Name'),
+                                subtitle: Text('Location: ${lab['physicalLocation'] ?? 'Unknown Location'}\n$publicAccessText'),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => LabDetailScreen(labId: int.parse(lab['id'])), // تمرير معرف المعمل
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
                 ],
               ),
             ),
